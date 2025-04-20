@@ -11,19 +11,49 @@ class Scale:
 cmaj = Scale([0, 2, 4, 5, 7, 9, 11])
 
 #possibility generation functions
-def possibleNotes(position, bass, scale):
+def possibleNotes(position, bass, solution, scale):
   bareConsonances = [0, 3, 4, 7, 8, 9]
   consonanceList = [i for i in range(60) if i%12 in bareConsonances]
   currentNote = bass[position]
   possibilities = [(currentNote + i) for i in consonanceList if (currentNote + i) in scale.scale]
   return [i for i in possibilities if i in range(55, 82)]
 
-def possibleNotes_2(position, bass, scale):
+def possibleNotes_2(position, bass, solution, scale):
   bareConsonances = [0, 3, 4, 7, 8, 9]
   consonanceList = [i for i in range(60) if i%12 in bareConsonances]
   currentNote = bass[position]
   possibilities = [(currentNote + i) for i in consonanceList if (currentNote + i) in scale.scale]
   returnList = [i for i in possibilities if i in range(55, 82)]
+  random.shuffle(returnList)
+  return returnList
+
+def possibleNotes_similar(position, bass, solution, scale):
+  bareConsonances = [0, 3, 4, 7, 8, 9]
+  consonanceList = [i for i in range(60) if i%12 in bareConsonances]
+  currentNote = bass[position]
+  possibilities = [(currentNote + i) for i in consonanceList if (currentNote + i) in scale.scale and (currentNote + i) in range(55, 82)]
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+  else:
+    returnList = possibilities
+  random.shuffle(returnList)
+  return returnList
+
+def possibleNotes_contrary(position, bass, solution, scale):
+  bareConsonances = [0, 3, 4, 7, 8, 9]
+  consonanceList = [i for i in range(60) if i%12 in bareConsonances]
+  currentNote = bass[position]
+  possibilities = [(currentNote + i) for i in consonanceList if (currentNote + i) in scale.scale and (currentNote + i) in range(55, 82)]
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+  else:
+    returnList = possibilities
   random.shuffle(returnList)
   return returnList
 
@@ -70,21 +100,36 @@ def isValid_4(position, bass, solution, note):
     return False
   return True
 
+def isValid_5(position, bass, solution, note):
+  if position == 0 and note % 12 in [0, 4, 7]:
+    return True
+  elif position == 0:
+    return False
+  parallels = [0, 7]
+  prev = position - 1
+  if (note - bass[position]) % 12 in parallels:
+    if (solution[prev] - bass[prev]) % 12 in parallels:
+      return False
+  if note == solution[prev] or abs(note - solution[prev]) > 9 or abs(note - solution[prev]) == 6:
+    return False
+  return True
+
 #solver functions
 def solveCP(position, bass, solution, scale):
   if position == len(bass):
     return solution
-  for note in possibleNotes_2(position, bass, scale)[::-1]:
-    if isValid_4(position, bass, solution, note):
+  for note in possibleNotes_similar(position, bass, solution, scale):
+    if isValid_5(position, bass, solution, note):
       solution.append(note)
       result = solveCP(position + 1, bass, solution, scale)
       if result != None:
         return result
       solution.pop()
-  return "no path"
+  return None
 
 cantusFirmus = [48, 57, 55, 53, 52, 55, 53, 50, 52, 53, 55, 59, 60]
-print(solveCP(0, cantusFirmus, [], cmaj))
+for i in range(4):
+  print(solveCP(0, cantusFirmus, [], cmaj))
 
 #results
 """
@@ -107,4 +152,21 @@ is valid_3 + possible_2:
 
 is valid_4 + possible_2
 [72, 77, 79, 81, 79, 74, 69, 71, 72, 74, 79, 74, 79]
+
+is valid_4 + possible_similar
+[69, 72, 71, 69, 67, 71, 69, 65, 67, 72, 76, 79, 81]
+
+is valid_5 + possible_similar
+[67, 72, 71, 62, 60, 67, 62, 59, 64, 69, 76, 79, 81]
+[55, 60, 59, 57, 55, 64, 62, 59, 67, 74, 76, 79, 81]
+[76, 81, 76, 69, 60, 64, 62, 59, 64, 69, 71, 74, 79]
+[72, 77, 74, 69, 67, 74, 69, 62, 67, 69, 74, 79, 81]
+[72, 77, 76, 69, 67, 71, 62, 57, 60, 62, 71, 74, 76]
+
+is valid_5 + possible_contrary
+[67, 65, 67, 74, 76, 71, 72, 77, 76, 69, 64, 62, 60]
+[64, 60, 67, 69, 76, 71, 74, 81, 72, 69, 67, 62, 60]
+[79, 72, 76, 77, 79, 71, 74, 77, 72, 69, 67, 62, 60]
+[67, 65, 67, 69, 72, 64, 72, 77, 72, 65, 64, 62, 60]
+[79, 72, 76, 77, 79, 71, 72, 77, 76, 74, 71, 62, 60]
 """
