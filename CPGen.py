@@ -2,7 +2,7 @@
 from google.colab import drive
 
 class Scale:
-  def __init__(base):
+  def __init__(self, base):
     self.base = base
     self.scale = [i for i in range(120) if i % 12 in self.base]
 
@@ -37,3 +37,8 @@ def solveCP(position, bass, solution, scale):
         return result
       solution.pop()
   return "no path"
+
+cantusFirmus = [48, 57, 55, 53, 52, 55, 53, 50, 52, 53, 55, 59, 60]
+#first output = [55, 60, 55, 57, 55, 55, 57, 57, 55, 57, 55, 62, 60]
+#second output = [81, 81, 76, 81, 79, 79, 81, 81, 79, 81, 79, 79, 81] 
+print(solveCP(0, cantusFirmus, [], cmaj))
