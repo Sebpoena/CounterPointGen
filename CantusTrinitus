@@ -1,0 +1,101 @@
+#counterpoint with 3 voices
+from google.colab import drive
+import random
+
+class Scale:
+  def __init__(self, base):
+    self.base = base
+    self.scale = [i for i in range(120) if i % 12 in self.base]
+
+
+cmaj = Scale([0, 2, 4, 5, 7, 9, 11])
+
+def possibleAlt(position, bass, solution, scale):
+  bareConsonances = [0, 3, 4, 7, 8, 9]
+  consonanceList = [i for i in range(60) if i%12 in bareConsonances]
+  currentNote = bass[position]
+  possibilities = [(currentNote + i) for i in consonanceList if (currentNote + i) in scale.scale]
+  return [i for i in possibilities if i in range(55, 72)]
+
+def isValidAlt(position, bass, solution, note):
+  if position == 0:
+    return True
+  parallels = [0, 7]
+  if note == bass[position]:
+    return False
+  if (note - bass[position]) % 12 in parallels:
+    if (solution[position-1] - bass[position-1]) % 12 in parallels:
+      return False
+  return True
+
+def possibleSop(position, bass, alt, solution, scale):
+  bareConsonances = [0, 3, 4, 5, 7, 8, 9]
+  consonanceList = [i for i in range(60) if i%12 in bareConsonances]
+  currentBass = bass[position]
+  currentAlt = alt[position]
+  possibilities = [i for i in scale.scale if abs(i - currentAlt) in consonanceList and abs(i - currentBass) in consonanceList and i in range(60,82)]
+  random.shuffle(possibilities)
+  return possibilities
+
+def isValidSop(position, bass, alt, solution, scale, note):
+  if position == 0 and note % 12 in [i + scale.base[0] for i in [0, 4, 7]]:
+    return True
+  elif position == 0:
+    print('failed first validity')
+    return False
+  parallels = [0, 7]
+  prev = solution[-1]
+  if note == prev:
+    return False
+  if abs(note - prev) > 9:
+    return False
+  if (note - bass[position]) % 12 in parallels:
+    if (solution[position-1] - bass[position-1]) % 12 in parallels:
+      return False
+  if (note - alt[position]) % 12 in parallels:
+    if (solution[position-1] - alt[position-1]) % 12 in parallels:
+      return False
+  return True
+  
+def solveAlt(position, bass, solution, scale):
+  if position == len(bass):
+    return solution
+  for note in possibleAlt(position, bass, solution, scale):
+    if isValidAlt(position, bass, solution, note):
+      solution.append(note)
+      result = solveAlt(position + 1, bass, solution, scale)
+      if result != None:
+        return result
+      solution.pop()
+  return None
+
+def solveSop(position, twoVoices, solution, scale):
+  bass = twoVoices[0]
+  alt = twoVoices[1]
+  if position == len(bass):
+    return solution
+  for note in possibleSop(position, bass, alt, solution, scale):
+    if isValidSop(position, bass, alt, solution, scale, note):
+      solution.append(note)
+      result = solveSop(position + 1, twoVoices, solution, scale)
+      if result != None:
+        return result
+      solution.pop()
+  return None
+
+
+cantusFirmus = [48, 57, 55, 53, 52, 55, 53, 50, 52, 53, 55, 59, 60]
+cantusSoftus = solveAlt(0, cantusFirmus, [], cmaj)
+print(cantusSoftus)
+cantusMissus = [cantusFirmus, cantusSoftus]
+cantusHardus = solveSop(0, cantusMissus, [], cmaj)
+
+for i in range(5):
+  print(solveSop(0, cantusMissus, [], cmaj))
+
+cantusGroupus = [cantusFirmus, 
+                 cantusSoftus,
+                 cantusHardus]
+print('full counterpoint')
+for i in cantusGroupus:
+  print(i)
