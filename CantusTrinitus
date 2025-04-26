@@ -37,6 +37,30 @@ def possibleSop(position, bass, alt, solution, scale):
   random.shuffle(possibilities)
   return possibilities
 
+def sopContrary(position, bass, alt, solution, scale):
+  possibilities = possibleSop(position, bass, alt, solution, scale)
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+  else:
+    returnList = possibilities
+  random.shuffle(returnList)
+  return returnList
+
+def sopSimilar(position, bass, alt, solution, scale):
+  possibilities = possibleSop(position, bass, alt, solution, scale)
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+  else:
+    returnList = possibilities
+  random.shuffle(returnList)
+  return returnList
+
 def isValidSop(position, bass, alt, solution, scale, note):
   if position == 0 and note % 12 in [i + scale.base[0] for i in [0, 4, 7]]:
     return True
@@ -47,7 +71,7 @@ def isValidSop(position, bass, alt, solution, scale, note):
   prev = solution[-1]
   if note == prev:
     return False
-  if abs(note - prev) > 9:
+  if abs(note - prev) > 5:
     return False
   if (note - bass[position]) % 12 in parallels:
     if (solution[position-1] - bass[position-1]) % 12 in parallels:
@@ -74,7 +98,7 @@ def solveSop(position, twoVoices, solution, scale):
   alt = twoVoices[1]
   if position == len(bass):
     return solution
-  for note in possibleSop(position, bass, alt, solution, scale):
+  for note in sopSimilar(position, bass, alt, solution, scale):
     if isValidSop(position, bass, alt, solution, scale, note):
       solution.append(note)
       result = solveSop(position + 1, twoVoices, solution, scale)
