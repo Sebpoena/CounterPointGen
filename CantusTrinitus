@@ -10,6 +10,7 @@ class Scale:
 
 cmaj = Scale([0, 2, 4, 5, 7, 9, 11])
 
+#alto functions - requires less complexity than sop
 def possibleAlt(position, bass, solution, scale):
   bareConsonances = [0, 3, 4, 7, 8, 9]
   consonanceList = [i for i in range(60) if i%12 in bareConsonances]
@@ -28,6 +29,7 @@ def isValidAlt(position, bass, solution, note):
       return False
   return True
 
+#soprano functions, including ideas like contrary motion and similar motion
 def possibleSop(position, bass, alt, solution, scale):
   bareConsonances = [0, 3, 4, 5, 7, 8, 9]
   consonanceList = [i for i in range(60) if i%12 in bareConsonances]
@@ -80,7 +82,64 @@ def isValidSop(position, bass, alt, solution, scale, note):
     if (solution[position-1] - alt[position-1]) % 12 in parallels:
       return False
   return True
-  
+
+#experiment with scoring system - prioritising not doubling notes already in the chord, and stepwise motion
+def score(position, bass, alt, solution, possibilities):
+  scoredNotes = []
+  for note in possibilities:
+    score = 0
+    context = [(bass[position]%12), 
+              (alt[position]%12)]
+    if note % 12 in context:
+      score -= 10
+    else:
+      score += 5
+    if position != 0:
+      prev = solution[position - 1]
+      prevInterval = abs(note - prev)
+      if prevInterval in (1, 2):
+        score += 3
+      elif prevInterval >= 7:
+        score -=2
+    scoredNotes.append((score, note))
+  scoredNotes.sort(key=lambda x: x[0], reverse=True)
+  print(bass[position], "bass", alt[position], 'alt', scoredNotes)
+  return [note for score, note in scoredNotes]
+
+def sopScored(position, bass, alt, solution, scale):
+  bareConsonances = [0, 3, 4, 5, 7, 8, 9]
+  consonanceList = [i for i in range(60) if i%12 in bareConsonances]
+  currentBass = bass[position]
+  currentAlt = alt[position]
+  possibilities = [i for i in scale.scale if abs(i - currentAlt) in consonanceList and abs(i - currentBass) in consonanceList and i in range(60,82)]
+  scored = score(position, bass, alt, solution, possibilities)
+  return scored
+
+def contScored(position, bass, alt, solution, scale):
+  possibilities = possibleSop(position, bass, alt, solution, scale)
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+  else:
+    returnList = possibilities
+  scored = score(position, bass, alt, solution, returnList)
+  return scored
+
+def simScored(position, bass, alt, solution, scale):
+  possibilities = possibleSop(position, bass, alt, solution, scale)
+  if position > 0:
+    if bass[position] - bass[position - 1] > 0:
+      returnList = [i for i in possibilities if i > solution[position - 1]]
+    else:
+      returnList = [i for i in possibilities if i < solution[position - 1]]
+  else:
+    returnList = possibilities
+  scored = score(position, bass, alt, solution, returnList)
+  return scored
+
+#solvers with slight differences for alto and soprano
 def solveAlt(position, bass, solution, scale):
   if position == len(bass):
     return solution
@@ -98,7 +157,7 @@ def solveSop(position, twoVoices, solution, scale):
   alt = twoVoices[1]
   if position == len(bass):
     return solution
-  for note in sopSimilar(position, bass, alt, solution, scale):
+  for note in sopScored(position, bass, alt, solution, scale):
     if isValidSop(position, bass, alt, solution, scale, note):
       solution.append(note)
       result = solveSop(position + 1, twoVoices, solution, scale)
@@ -107,8 +166,21 @@ def solveSop(position, twoVoices, solution, scale):
       solution.pop()
   return None
 
+def fullCP(cf, scale):
+  alto = solveAlt(0, cf, [], scale)
+  voices = [cf,
+            alto]
+  soprano = solveSop(0, voices, [], scale)
+  voices.append(soprano)
+  for i in voices:
+    print(i)
+  return voices
 
 cantusFirmus = [48, 57, 55, 53, 52, 55, 53, 50, 52, 53, 55, 59, 60]
+cf2 = [48, 50, 52, 48, 53, 50, 52, 48, 57, 62, 59, 55, 60, 55, 48]
+fullCP(cf2, cmaj)
+
+"""
 cantusSoftus = solveAlt(0, cantusFirmus, [], cmaj)
 print(cantusSoftus)
 cantusMissus = [cantusFirmus, cantusSoftus]
@@ -117,9 +189,15 @@ cantusHardus = solveSop(0, cantusMissus, [], cmaj)
 for i in range(5):
   print(solveSop(0, cantusMissus, [], cmaj))
 
-cantusGroupus = [cantusFirmus, 
+cantusGroupus = [cantusFirmus,
                  cantusSoftus,
                  cantusHardus]
 print('full counterpoint')
 for i in cantusGroupus:
   print(i)
+
+#output for scored stuff = 
+[48, 50, 52, 48, 53, 50, 52, 48, 57, 62, 59, 55, 60, 55, 48]
+[55, 59, 55, 55, 57, 57, 55, 55, 60, 65, 62, 59, 64, 59, 55]
+[64, 67, 71, 76, 74, 77, 72, 76, 77, 81, 79, 74, 69, 64, 60]
+"""
