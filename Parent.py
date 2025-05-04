@@ -1,5 +1,4 @@
 #updated 3 voice counterpoint with recursion from sop to alt
-#scored and organised CPgeneration
 from google.colab import drive
 
 class Scale:
