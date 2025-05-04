@@ -3,20 +3,23 @@
 from google.colab import drive
 
 class Scale:
-  def __init__(self, base, additive, leaning = 1):
+  def __init__(self, base, additive, triad = []):
     self.base = base
     self.additive = additive
-    self.leaning = leaning
+    self.triad = triad
+    if len(self.triad) == 0:
+      self.triad = [(i + self.additive)%12 for i in [0, 4, 7]]
     self.scale = [i for i in range(120) if i % 12 in self.base]
 
 
 cmaj = Scale([0, 2, 4, 5, 7, 9, 11], 0)
 asmaj = Scale([0, 1, 3, 5, 7, 8, 10], 8)
+fmin = Scale([0, 1, 3, 5, 7, 8, 10], 8, [0, 5, 8])
 
 #soprano functions
 def isValidSop(position, bass, alt, solution, scale, note):
   triad = [(i + scale.additive)%12 for i in [0, 4, 7]]
-  if position == 0 and note % 12 in [(i + scale.additive)%12 for i in [0, 4, 7]]:
+  if position == 0 and note % 12 in scale.triad:
     return True
   elif position == 0:
     #print('failed first validity')
@@ -183,15 +186,15 @@ armPhrase = [arm1, arm2, arm3, arm4, arm5]
 
 for i in armPhrase:
   print('---new--- reg')
-  print(solveVoices(0, i, [], asmaj, sopScored))
+  print(solveVoices(0, i, [], fmin, sopScored))
 
 for i in armPhrase:
   print('---new--- cont')
-  print(solveVoices(0, i, [], asmaj, contScored))
+  print(solveVoices(0, i, [], fmin, contScored))
 
 for i in armPhrase:
   print('---new--- sim')
-  print(solveVoices(0, i, [], asmaj, simScored))
+  print(solveVoices(0, i, [], fmin, simScored))
 
 """
 for i in armPhrase:
@@ -252,4 +255,36 @@ results arm song: (major biased settings)
 [[56, 60, 58, 55, 58, 56], [56, 63, 61, 58, 61, 60], [63, 68, 65, 63, 65, 60]]
 ---new--- sim
 [[56, 55, 53, 48, 56, 55, 53], [56, 58, 56, 55, 60, 58, 56], [72, 70, 65, 63, 65, 63, 61]]
+
+--- updated logic in scale building for base triad
+---new--- reg
+[[48, 53, 52, 53], [55, 56, 55, 56], [60, 61, 60, 61]]
+---new--- reg
+[[53, 53, 55, 56], [56, 56, 58, 60], [60, 61, 63, 65]]
+---new--- reg
+[[55, 58, 56, 55, 53, 55, 52, 53], [55, 61, 60, 58, 56, 58, 55, 56], [60, 65, 60, 63, 61, 63, 60, 61]]
+---new--- reg
+[[56, 60, 58, 55, 58, 56], [56, 63, 61, 58, 61, 60], [60, 63, 65, 63, 65, 60]]
+---new--- reg
+[[56, 55, 53, 48, 56, 55, 53], [56, 58, 56, 55, 60, 58, 56], [60, 63, 61, 63, 65, 63, 61]]
+---new--- cont
+[[48, 53, 52, 53], [55, 56, 55, 56], [72, 68, 72, 68]]
+---new--- cont
+[[53, 53, 55, 56], [56, 56, 58, 60], [72, 73, 70, 65]]
+---new--- cont
+[[55, 58, 56, 55, 53, 55, 52, 53], [55, 61, 60, 58, 56, 58, 55, 56], [72, 70, 72, 75, 77, 75, 79, 77]]
+---new--- cont
+[[56, 60, 58, 55, 58, 56], [56, 63, 61, 58, 61, 60], [65, 60, 61, 63, 61, 63]]
+---new--- cont
+[[56, 55, 53, 48, 56, 55, 53], [56, 58, 56, 55, 60, 58, 56], [65, 70, 72, 75, 72, 75, 77]]
+---new--- sim
+[[48, 53, 52, 53], [55, 56, 55, 56], [60, 61, 60, 61]]
+---new--- sim
+[[53, 53, 55, 56], [56, 56, 58, 60], [65, 61, 63, 65]]
+---new--- sim
+[[55, 58, 56, 55, 53, 55, 52, 53], [55, 61, 60, 58, 56, 58, 55, 56], [72, 73, 68, 63, 61, 63, 60, 61]]
+---new--- sim
+[[56, 60, 58, 55, 58, 56], [56, 63, 61, 58, 61, 60], [65, 68, 65, 63, 65, 60]]
+---new--- sim
+[[56, 55, 53, 48, 56, 55, 53], [56, 58, 56, 55, 60, 58, 56], [65, 63, 61, 60, 65, 63, 61]]
 """
